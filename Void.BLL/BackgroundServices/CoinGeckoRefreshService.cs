@@ -57,14 +57,14 @@ namespace Void.BLL.BackgroundServices
             }
         }
 
-        public async Task RefreshTickersAsync(string coinId, CancellationToken cancellationToken)
+        private async Task RefreshTickersAsync(string coinId, CancellationToken cancellationToken = default)
         {
             using var scope = serviceProvider.CreateScope();
             var tickerService = scope.ServiceProvider.GetRequiredService<ITickerService>();
             var exchangeService = scope.ServiceProvider.GetRequiredService<IExchangeService>();
             var coinGeckoService = scope.ServiceProvider.GetRequiredService<ICoinGeckoService>();
 
-            var exchanges = await exchangeService.GetExchangesAsync();
+            var exchanges = await exchangeService.GetExchangesAsync(cancellationToken);
             var exchangeIds = exchanges.Select(x => x.Id).ToArray();
 
             var coinTickers = await coinGeckoService.GetCoinTickersAsync(coinId, exchangeIds, cancellationToken);
@@ -72,7 +72,7 @@ namespace Void.BLL.BackgroundServices
             await tickerService.RefreshTickersAsync(coinId, coinTickers, cancellationToken);
         }
 
-        public async Task CheckCoinTickersAsync(string coinId, CancellationToken cancellationToken)
+        private async Task CheckCoinTickersAsync(string coinId, CancellationToken cancellationToken = default)
         {
             if (checkingTimestamps.TryGetValue(coinId, out DateTime checkingTime))
             {

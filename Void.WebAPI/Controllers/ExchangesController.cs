@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
 using Void.DAL.Entities;
@@ -25,16 +26,16 @@ namespace Void.WebAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Exchange>>> GetExchangesAsync()
+        public async Task<ActionResult<IEnumerable<Exchange>>> GetExchangesAsync(CancellationToken cancellationToken)
         {
-            var exchanges = await exchangeService.GetExchangesAsync();
+            var exchanges = await exchangeService.GetExchangesAsync(cancellationToken);
             return Ok(mapper.Map<IEnumerable<ExchangeReadDto>>(exchanges));
         }
 
         [HttpGet("{id}", Name = "GetExchangeAsync")]
-        public async Task<ActionResult<ExchangeReadDto>> GetExchangeAsync(string id)
+        public async Task<ActionResult<ExchangeReadDto>> GetExchangeAsync(string id, CancellationToken cancellationToken)
         {
-            var exchange = await exchangeService.GetExchangeAsync(id);
+            var exchange = await exchangeService.GetExchangeAsync(id, cancellationToken);
             if (exchange is null)
             {
                 return NotFound();
@@ -43,13 +44,13 @@ namespace Void.WebAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ExchangeReadDto>> AddExchangeAsync(ExchangeAddDto exchangeAddDto)
+        public async Task<ActionResult<ExchangeReadDto>> AddExchangeAsync(ExchangeAddDto exchangeAddDto, CancellationToken cancellationToken)
         {
             var exchange = mapper.Map<Exchange>(exchangeAddDto);
 
             try
             {
-                await exchangeService.AddExchangeAsync(exchange);
+                await exchangeService.AddExchangeAsync(exchange, cancellationToken);
             }
             catch (InvalidOperationException)
             {
@@ -61,17 +62,9 @@ namespace Void.WebAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> RemoveExchangeAsync(string id)
+        public async Task<ActionResult> RemoveExchangeAsync(string id, CancellationToken cancellationToken)
         {
-            try
-            {
-                await exchangeService.RemoveExchangeAsync(id);
-            }
-            catch (ArgumentNullException)
-            {
-                return NotFound();
-            }
-
+            await exchangeService.RemoveExchangeAsync(id, cancellationToken);
             return NoContent();
         }
     }
