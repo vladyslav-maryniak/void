@@ -10,9 +10,9 @@ namespace Void.BLL.Services.Abstractions
     {
         Task<Ticker[]> GetTickersAsync(CancellationToken cancellationToken = default);
         Task<Ticker[]> GetTickersAsync(string coinId, CancellationToken cancellationToken = default);
-        Task<Ticker> GetTickerAsync(int id);
-        Task RemoveTickerAsync(int id);
-        Task RefreshTickersAsync(string coinId, ICollection<Ticker> coinTickers, CancellationToken cancellationToken);
+        Task<Ticker> GetTickerAsync(int id, CancellationToken cancellationToken = default);
+        Task RemoveTickerAsync(int id, CancellationToken cancellationToken = default);
+        Task RefreshTickersAsync(string coinId, ICollection<Ticker> coinTickers, CancellationToken cancellationToken = default);
         Ticker[] Filter(Ticker[] tickers, TickerFilter filter);
     }
 }

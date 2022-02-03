@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
 using Void.Shared.DTOs.TickerPair;
@@ -22,9 +23,9 @@ namespace Void.WebAPI.Controllers
         }
 
         [HttpGet("{coinId}")]
-        public async Task<ActionResult<TickerPairReadDto>> GetTickerPairAsync(string coinId, bool defaultFilters = false)
+        public async Task<ActionResult<TickerPairReadDto>> GetTickerPairAsync(string coinId, bool defaultFilters, CancellationToken cancellationToken)
         {
-            var tickerPair = await tickerPairService.GetTickerPairAsync(coinId, defaultFilters);
+            var tickerPair = await tickerPairService.GetTickerPairAsync(coinId, defaultFilters, cancellationToken);
             return Ok(mapper.Map<TickerPairReadDto>(tickerPair));
         }
     }

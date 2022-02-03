@@ -35,27 +35,21 @@ namespace Void.BLL.Services
                 .Include(x => x.Exchange)
                 .ToArrayAsync(cancellationToken);
 
-        public async Task<Ticker> GetTickerAsync(int id)
+        public async Task<Ticker> GetTickerAsync(int id, CancellationToken cancellationToken = default)
             => await context.Tickers
                 .AsNoTracking()
                 .Include(x => x.Coin)
                 .Include(x => x.Exchange)
-                .FirstOrDefaultAsync(x => x.Id == id);
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-        public async Task RemoveTickerAsync(int id)
+        public async Task RemoveTickerAsync(int id, CancellationToken cancellationToken = default)
         {
-            var ticker = await GetTickerAsync(id);
-            if (ticker is null)
-            {
-                throw new ArgumentNullException(nameof(ticker));
-            }
-
-            context.Remove(ticker);
-            await context.SaveChangesAsync();
+            context.Remove(new Ticker { Id = id });
+            await context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task RefreshTickersAsync(
-            string coinId, ICollection<Ticker> coinTickers, CancellationToken cancellationToken)
+            string coinId, ICollection<Ticker> coinTickers, CancellationToken cancellationToken = default)
         {
             var obsoleteCoinTickers = await context.Tickers
                 .AsNoTracking()

@@ -6,6 +6,6 @@ namespace Void.BLL.Services.Abstractions
 {
     public interface ICoinGeckoService
     {
-        Task<Ticker[]> GetCoinTickersAsync(string id, string[] exchangeIds, CancellationToken cancellationToken);
+        Task<Ticker[]> GetCoinTickersAsync(string id, string[] exchangeIds, CancellationToken cancellationToken = default);
     }
 }

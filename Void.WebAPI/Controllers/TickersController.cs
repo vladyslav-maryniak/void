@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
 using Void.Shared.DTOs.Ticker;
@@ -23,16 +24,16 @@ namespace Void.WebAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<TickerReadDto[]>> GetTickersAsync()
+        public async Task<ActionResult<TickerReadDto[]>> GetTickersAsync(CancellationToken cancellationToken)
         {
-            var tickers = await tickerService.GetTickersAsync();
+            var tickers = await tickerService.GetTickersAsync(cancellationToken);
             return Ok(mapper.Map<TickerReadDto[]>(tickers));
         }
 
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<TickerReadDto>> GetTickerAsync(int id)
+        public async Task<ActionResult<TickerReadDto>> GetTickerAsync(int id, CancellationToken cancellationToken)
         {
-            var ticker = await tickerService.GetTickerAsync(id);
+            var ticker = await tickerService.GetTickerAsync(id, cancellationToken);
             if (ticker is null)
             {
                 return NotFound();
@@ -41,17 +42,9 @@ namespace Void.WebAPI.Controllers
         }
 
         [HttpDelete("{id:int}")]
-        public async Task<ActionResult> RemoveTickerAsync(int id)
+        public async Task<ActionResult> RemoveTickerAsync(int id, CancellationToken cancellationToken)
         {
-            try
-            {
-                await tickerService.RemoveTickerAsync(id);
-            }
-            catch (ArgumentNullException)
-            {
-                return NotFound();
-            }
-
+            await tickerService.RemoveTickerAsync(id, cancellationToken);
             return NoContent();
         }
     }

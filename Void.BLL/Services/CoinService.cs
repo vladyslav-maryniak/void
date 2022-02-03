@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
 using Void.DAL;
@@ -24,37 +24,26 @@ namespace Void.BLL.Services
                 .AsEnumerable()
                 .GetEnumerator();
 
-        public async Task<IEnumerable<Coin>> GetCoinsAsync()
+        public async Task<IEnumerable<Coin>> GetCoinsAsync(CancellationToken cancellationToken = default)
             => await context.Coins
                 .AsNoTracking()
-                .ToArrayAsync();
+                .ToArrayAsync(cancellationToken);
 
-        public async Task<Coin> GetCoinAsync(string id)
+        public async Task<Coin> GetCoinAsync(string id, CancellationToken cancellationToken = default)
             => await context.Coins
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id);
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-        public async Task AddCoinAsync(Coin coin)
+        public async Task AddCoinAsync(Coin coin, CancellationToken cancellationToken = default)
         {
-            if (coin is null)
-            {
-                throw new ArgumentNullException(nameof(coin));
-            }
-
-            await context.AddAsync(coin);
-            await context.SaveChangesAsync();
+            await context.AddAsync(coin, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task RemoveCoinAsync(string id)
+        public async Task RemoveCoinAsync(string id, CancellationToken cancellationToken = default)
         {
-            var coin = await GetCoinAsync(id);
-            if (coin is null)
-            {
-                throw new ArgumentNullException(nameof(coin));
-            }
-
-            context.Remove(coin);
-            await context.SaveChangesAsync();
+            context.Remove(new Coin { Id = id });
+            await context.SaveChangesAsync(cancellationToken);
         }
     }
 }

@@ -28,14 +28,14 @@ namespace Void.BLL.Services
             baseUri = $"{options.Value.Schemes.First()}://{options.Value.Host}{options.Value.BasePath}";
         }
 
-        public async Task<Ticker[]> GetCoinTickersAsync(string id, string[] exchangeIds, CancellationToken cancellationToken)
+        public async Task<Ticker[]> GetCoinTickersAsync(string id, string[] exchangeIds, CancellationToken cancellationToken = default)
         {
             var endpoint = $"{baseUri}/coins/{id}/tickers";
             var parameters = InitializeParams(exchangeIds);
             var uri = new Uri(QueryHelpers.AddQueryString(endpoint, parameters));
 
             var response = await httpClient.GetAsync(uri, cancellationToken);
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
 
             var coinTickerDto = JsonConvert.DeserializeObject<CoinGeckoTickerReadDto>(content);
             return mapper.Map<Ticker[]>(coinTickerDto.Tickers);

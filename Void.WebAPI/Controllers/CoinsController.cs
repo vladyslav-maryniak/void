@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
 using Void.DAL.Entities;
@@ -25,16 +26,16 @@ namespace Void.WebAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Coin>>> GetCoinsAsync()
+        public async Task<ActionResult<IEnumerable<Coin>>> GetCoinsAsync(CancellationToken cancellationToken)
         {
-            var coins = await coinService.GetCoinsAsync();
+            var coins = await coinService.GetCoinsAsync(cancellationToken);
             return Ok(mapper.Map<IEnumerable<CoinReadDto>>(coins));
         }
 
         [HttpGet("{id}", Name = "GetCoinAsync")]
-        public async Task<ActionResult<CoinReadDto>> GetCoinAsync(string id)
+        public async Task<ActionResult<CoinReadDto>> GetCoinAsync(string id, CancellationToken cancellationToken)
         {
-            var coin = await coinService.GetCoinAsync(id);
+            var coin = await coinService.GetCoinAsync(id, cancellationToken);
             if (coin is null)
             {
                 return NotFound();
@@ -43,13 +44,13 @@ namespace Void.WebAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<CoinReadDto>> AddCoinAsync(CoinAddDto coinAddDto)
+        public async Task<ActionResult<CoinReadDto>> AddCoinAsync(CoinAddDto coinAddDto, CancellationToken cancellationToken)
         {
             var coin = mapper.Map<Coin>(coinAddDto);
 
             try
             {
-                await coinService.AddCoinAsync(coin);
+                await coinService.AddCoinAsync(coin, cancellationToken);
             }
             catch (InvalidOperationException)
             {
@@ -61,17 +62,9 @@ namespace Void.WebAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> RemoveCoinAsync(string id)
+        public async Task<ActionResult> RemoveCoinAsync(string id, CancellationToken cancellationToken)
         {
-            try
-            {
-                await coinService.RemoveCoinAsync(id);
-            }
-            catch (ArgumentNullException)
-            {
-                return NotFound();
-            }
-
+            await coinService.RemoveCoinAsync(id, cancellationToken);
             return NoContent();
         }
     }
