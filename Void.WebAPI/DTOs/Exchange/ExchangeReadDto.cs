@@ -1,4 +1,4 @@
-﻿namespace Void.Shared.DTOs.Exchange
+﻿namespace Void.WebAPI.DTOs.Exchange
 {
     public class ExchangeReadDto
     {

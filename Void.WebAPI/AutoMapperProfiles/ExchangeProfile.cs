@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Void.DAL.Entities;
-using Void.Shared.DTOs.Exchange;
+using Void.WebAPI.DTOs.Exchange;
 
-namespace Void.BLL.AutoMapperProfiles
+namespace Void.WebAPI.AutoMapperProfiles
 {
     public class ExchangeProfile : Profile
     {

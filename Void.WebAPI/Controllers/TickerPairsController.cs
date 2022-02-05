@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
-using Void.Shared.DTOs.TickerPair;
+using Void.WebAPI.DTOs.TickerPair;
 
 namespace Void.WebAPI.Controllers
 {

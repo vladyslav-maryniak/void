@@ -8,9 +8,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Void.BLL.DTOs.Ticker;
 using Void.BLL.Services.Abstractions;
 using Void.DAL.Entities;
-using Void.Shared.DTOs.Ticker;
 using Void.Shared.Options;
 
 namespace Void.BLL.Services

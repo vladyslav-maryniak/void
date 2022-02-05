@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Void.DAL.Entities;
-using Void.Shared.DTOs.Coin;
+using Void.WebAPI.DTOs.Coin;
 
-namespace Void.BLL.AutoMapperProfiles
+namespace Void.WebAPI.AutoMapperProfiles
 {
     public class CoinProfile : Profile
     {

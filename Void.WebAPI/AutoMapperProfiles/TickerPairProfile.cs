@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Void.BLL.Models;
-using Void.Shared.DTOs.TickerPair;
+using Void.WebAPI.DTOs.TickerPair;
 
-namespace Void.BLL.AutoMapperProfiles
+namespace Void.WebAPI.AutoMapperProfiles
 {
     public class TickerPairProfile : Profile
     {

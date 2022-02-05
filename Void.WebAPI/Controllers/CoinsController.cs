@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
 using Void.DAL.Entities;
-using Void.Shared.DTOs.Coin;
+using Void.WebAPI.DTOs.Coin;
 
 namespace Void.WebAPI.Controllers
 {

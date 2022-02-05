@@ -1,7 +1,7 @@
-﻿using Void.Shared.DTOs.Ticker;
-using Void.Shared.DTOs.TickerPairQuality;
+﻿using Void.WebAPI.DTOs.Ticker;
+using Void.WebAPI.DTOs.TickerPairQuality;
 
-namespace Void.Shared.DTOs.TickerPair
+namespace Void.WebAPI.DTOs.TickerPair
 {
     public class TickerPairReadDto
     {

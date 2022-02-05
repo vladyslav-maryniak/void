@@ -1,4 +1,4 @@
-﻿namespace Void.Shared.DTOs.TickerPairQuality
+﻿namespace Void.WebAPI.DTOs.TickerPairQuality
 {
     public class TickerPairQualityReadDto
     {

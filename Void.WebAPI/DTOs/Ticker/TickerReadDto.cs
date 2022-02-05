@@ -1,4 +1,4 @@
-﻿namespace Void.Shared.DTOs.Ticker
+﻿namespace Void.WebAPI.DTOs.Ticker
 {
     public class TickerReadDto
     {

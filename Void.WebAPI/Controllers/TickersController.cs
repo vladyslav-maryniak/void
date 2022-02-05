@@ -1,11 +1,10 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
-using Void.Shared.DTOs.Ticker;
+using Void.WebAPI.DTOs.Ticker;
 
 namespace Void.WebAPI.Controllers
 {

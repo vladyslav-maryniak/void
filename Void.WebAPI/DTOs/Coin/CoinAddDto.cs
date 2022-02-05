@@ -1,6 +1,6 @@
-﻿namespace Void.Shared.DTOs.Coin
+﻿namespace Void.WebAPI.DTOs.Coin
 {
-    public class CoinReadDto
+    public class CoinAddDto
     {
         public string Id { get; set; }
         public string Symbol { get; set; }

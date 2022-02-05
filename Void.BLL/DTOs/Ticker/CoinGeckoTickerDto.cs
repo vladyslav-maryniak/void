@@ -1,16 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System;
 
-namespace Void.Shared.DTOs.Ticker
+namespace Void.BLL.DTOs.Ticker
 {
-    public class CoinGeckoTickerReadDto
-    {
-        [JsonProperty("name")]
-        public string Name { get; set; }
-
-        [JsonProperty("tickers")]
-        public CoinGeckoTickerDto[] Tickers { get; set; }
-    }
 
     public class CoinGeckoTickerDto
     {
@@ -73,41 +65,5 @@ namespace Void.Shared.DTOs.Ticker
 
         [JsonProperty("target_coin_id")]
         public string TargetCoinId { get; set; }
-    }
-
-    public class MarketDto
-    {
-        [JsonProperty("name")]
-        public string Name { get; set; }
-
-        [JsonProperty("identifier")]
-        public string Identifier { get; set; }
-
-        [JsonProperty("has_trading_incentive")]
-        public bool HasTradingIncentive { get; set; }
-    }
-
-    public class ConvertedLastDto
-    {
-        [JsonProperty("btc")]
-        public decimal Btc { get; set; }
-
-        [JsonProperty("eth")]
-        public decimal Eth { get; set; }
-
-        [JsonProperty("usd")]
-        public decimal Usd { get; set; }
-    }
-
-    public class ConvertedVolumeDto
-    {
-        [JsonProperty("btc")]
-        public decimal Btc { get; set; }
-
-        [JsonProperty("eth")]
-        public decimal Eth { get; set; }
-
-        [JsonProperty("usd")]
-        public decimal Usd { get; set; }
     }
 }
