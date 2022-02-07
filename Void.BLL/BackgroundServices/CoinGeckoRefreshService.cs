@@ -62,12 +62,12 @@ namespace Void.BLL.BackgroundServices
             using var scope = serviceProvider.CreateScope();
             var tickerService = scope.ServiceProvider.GetRequiredService<ITickerService>();
             var exchangeService = scope.ServiceProvider.GetRequiredService<IExchangeService>();
-            var coinGeckoService = scope.ServiceProvider.GetRequiredService<ICoinGeckoService>();
+            var dataProvider = scope.ServiceProvider.GetRequiredService<ICryptoDataProvider>();
 
             var exchanges = await exchangeService.GetExchangesAsync(cancellationToken);
             var exchangeIds = exchanges.Select(x => x.Id).ToArray();
 
-            var coinTickers = await coinGeckoService.GetCoinTickersAsync(coinId, exchangeIds, cancellationToken);
+            var coinTickers = await dataProvider.GetCoinTickersAsync(coinId, exchangeIds, cancellationToken);
 
             await tickerService.RefreshTickersAsync(coinId, coinTickers, cancellationToken);
         }

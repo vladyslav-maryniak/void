@@ -2,7 +2,7 @@
 
 namespace Void.BLL.DTOs.Ticker
 {
-    public class CoinGeckoTickerReadDto
+    public class CoinGeckoCoinTickersReadDto
     {
         [JsonProperty("name")]
         public string Name { get; set; }
