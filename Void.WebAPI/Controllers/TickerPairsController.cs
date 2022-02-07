@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
-using Void.Shared.DTOs.TickerPair;
+using Void.WebAPI.DTOs.TickerPair;
 
 namespace Void.WebAPI.Controllers
 {
@@ -22,11 +22,12 @@ namespace Void.WebAPI.Controllers
             this.mapper = mapper;
         }
 
-        [HttpGet("{coinId}")]
+        [HttpGet("{coinId:regex(^([[a-z0-9]]*)(-[[a-z0-9]]+)*$):length(1,55)}")]
         public async Task<ActionResult<TickerPairReadDto>> GetTickerPairAsync(string coinId, bool defaultFilters, CancellationToken cancellationToken)
         {
-            var tickerPair = await tickerPairService.GetTickerPairAsync(coinId, defaultFilters, cancellationToken);
-            return Ok(mapper.Map<TickerPairReadDto>(tickerPair));
+            var tickerPairOption = await tickerPairService.GetTickerPairAsync(coinId, defaultFilters, cancellationToken);
+            return tickerPairOption.Match<ActionResult<TickerPairReadDto>>(tickerPair =>
+                Ok(mapper.Map<TickerPairReadDto>(tickerPair)), NotFound());
         }
     }
 }

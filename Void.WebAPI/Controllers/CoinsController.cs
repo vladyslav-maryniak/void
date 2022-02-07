@@ -1,13 +1,11 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
-using Void.DAL.Entities;
-using Void.Shared.DTOs.Coin;
+using Void.WebAPI.Contracts;
+using Void.WebAPI.DTOs.Coin;
 
 namespace Void.WebAPI.Controllers
 {
@@ -26,46 +24,50 @@ namespace Void.WebAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Coin>>> GetCoinsAsync(CancellationToken cancellationToken)
+        public async Task<ActionResult<CoinReadDto[]>> GetCoinsAsync(CancellationToken cancellationToken)
         {
             var coins = await coinService.GetCoinsAsync(cancellationToken);
-            return Ok(mapper.Map<IEnumerable<CoinReadDto>>(coins));
+            return Ok(mapper.Map<CoinReadDto[]>(coins));
         }
 
-        [HttpGet("{id}", Name = "GetCoinAsync")]
+        [HttpGet("{id:regex(^([[a-z0-9]]*)(-[[a-z0-9]]+)*$):length(1,55)}", Name = "GetCoinAsync")]
         public async Task<ActionResult<CoinReadDto>> GetCoinAsync(string id, CancellationToken cancellationToken)
         {
-            var coin = await coinService.GetCoinAsync(id, cancellationToken);
-            if (coin is null)
-            {
-                return NotFound();
-            }
-            return Ok(mapper.Map<CoinReadDto>(coin));
+            var coinOption = await coinService.GetCoinAsync(id, cancellationToken);
+            return coinOption.Match<ActionResult<CoinReadDto>>(coin =>
+                Ok(mapper.Map<CoinReadDto>(coin)), NotFound());
         }
 
         [HttpPost]
-        public async Task<ActionResult<CoinReadDto>> AddCoinAsync(CoinAddDto coinAddDto, CancellationToken cancellationToken)
+        public async Task<ActionResult<CoinReadDto>> AddCoinAsync(
+            CoinAddDto coinAddDto, CancellationToken cancellationToken)
         {
-            var coin = mapper.Map<Coin>(coinAddDto);
+            var coinOption = await coinService.AddCoinAsync(coinAddDto.Id, cancellationToken);
+            return coinOption.Match<ActionResult<CoinReadDto>>(
+                coin =>
+                {
+                    var coinDto = mapper.Map<CoinReadDto>(coin);
+                    return CreatedAtRoute(nameof(GetCoinAsync), new { coin.Id }, coinDto);
+                },
+                () =>
+                {
+                    ValidationErrorResponse error = new();
+                    ValidationErrorModel model = new()
+                    {
+                        PropertyName = nameof(coinAddDto.Id),
+                        Message = "Coin with provided 'id' already exists"
+                    };
+                    error.Errors.Add(model);
 
-            try
-            {
-                await coinService.AddCoinAsync(coin, cancellationToken);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest();
-            }
-            var coinReadDto = mapper.Map<CoinReadDto>(coin);
-
-            return CreatedAtRoute(nameof(GetCoinAsync), new { Id = coinReadDto.Id }, coinReadDto);
+                    return BadRequest(error);
+                });
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:regex(^([[a-z0-9]]*)(-[[a-z0-9]]+)*$):length(1,55)}")]
         public async Task<ActionResult> RemoveCoinAsync(string id, CancellationToken cancellationToken)
         {
-            await coinService.RemoveCoinAsync(id, cancellationToken);
-            return NoContent();
+            var coinOption = await coinService.RemoveCoinAsync(id, cancellationToken);
+            return coinOption.Match<ActionResult>(_ => NoContent(), NotFound());
         }
     }
 }

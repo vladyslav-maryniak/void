@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
+using Void.BLL.DTOs.Coin;
 using Void.DAL.Entities;
-using Void.Shared.DTOs.Coin;
 
 namespace Void.BLL.AutoMapperProfiles
 {
@@ -8,9 +8,7 @@ namespace Void.BLL.AutoMapperProfiles
     {
         public CoinProfile()
         {
-            CreateMap<CoinAddDto, Coin>();
-            CreateMap<Coin, CoinReadDto>();
-            CreateMap<CoinReadDto, Coin>();
+            CreateMap<CoinGeckoCoinReadDto, Coin>();
         }
     }
 }

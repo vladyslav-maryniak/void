@@ -1,4 +1,4 @@
-﻿namespace Void.Shared.DTOs.Coin
+﻿namespace Void.WebAPI.DTOs.Coin
 {
     public class CoinReadDto
     {

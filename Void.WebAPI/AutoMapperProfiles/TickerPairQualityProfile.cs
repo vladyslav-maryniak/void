@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Void.BLL.Models;
-using Void.Shared.DTOs.TickerPairQuality;
+using Void.WebAPI.DTOs.TickerPairQuality;
 
-namespace Void.BLL.AutoMapperProfiles
+namespace Void.WebAPI.AutoMapperProfiles
 {
     public class TickerPairQualityProfile : Profile
     {

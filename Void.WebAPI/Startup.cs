@@ -1,4 +1,5 @@
 using Discord.WebSocket;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -9,12 +10,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
-using Void.BLL.AutoMapperProfiles;
 using Void.BLL.BackgroundServices;
 using Void.BLL.Services;
 using Void.BLL.Services.Abstractions;
 using Void.DAL;
 using Void.Shared.Options;
+using Void.WebAPI.Filter;
 
 namespace Void.WebAPI
 {
@@ -35,14 +36,15 @@ namespace Void.WebAPI
             services.AddTransient<IExchangeService, ExchangeService>();
             services.AddTransient<ITickerPairService, TickerPairService>();
             
-            services.AddTransient<ICoinGeckoService, CoinGeckoService>();
+            services.AddTransient<ICryptoDataProvider, CoinGeckoProvider>();
             services.AddSingleton<INotifier, DiscordNotifier>();
 
             services.AddHostedService<CoinGeckoRefreshService>();
             services.AddHttpClient();
             services.AddSingleton<DiscordSocketClient>();
 
-            services.AddAutoMapper(Assembly.GetAssembly(typeof(CoinProfile)));
+            services.AddAutoMapper(Assembly.GetAssembly(typeof(BLL.AutoMapperProfiles.CoinProfile)));
+            services.AddAutoMapper(Assembly.GetAssembly(typeof(WebAPI.AutoMapperProfiles.TickerProfile)));
 
             services.Configure<CoinGeckoOptions>(Configuration.GetSection(CoinGeckoOptions.Key));
             services.Configure<TickerFilterOptions>(Configuration.GetSection(TickerFilterOptions.Key));
@@ -63,13 +65,27 @@ namespace Void.WebAPI
             );
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(opt =>
+                .AddJwtBearer(options =>
                 {
-                    opt.Audience = Configuration["AAD:ResourceId"];
-                    opt.Authority = $"{Configuration["AAD:Instance"]}{Configuration["AAD:TenantId"]}";
+                    options.Audience = Configuration["AAD:ResourceId"];
+                    options.Authority = $"{Configuration["AAD:Instance"]}{Configuration["AAD:TenantId"]}";
                 });
 
-            services.AddControllers();
+            services
+                .AddControllers(options =>
+                {
+                    options.Filters.Add<ValidationFilter>();
+                })  
+                .ConfigureApiBehaviorOptions(options =>
+                {
+                    options.SuppressModelStateInvalidFilter = true;
+                })
+                .AddFluentValidation(config =>
+                {
+                    config.LocalizationEnabled = false;
+                    config.RegisterValidatorsFromAssemblyContaining<Startup>();
+                });
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Void.WebAPI", Version = "v1" });

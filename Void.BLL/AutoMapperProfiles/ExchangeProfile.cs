@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
+using Void.BLL.DTOs.Exchange;
 using Void.DAL.Entities;
-using Void.Shared.DTOs.Exchange;
 
 namespace Void.BLL.AutoMapperProfiles
 {
@@ -8,9 +8,7 @@ namespace Void.BLL.AutoMapperProfiles
     {
         public ExchangeProfile()
         {
-            CreateMap<ExchangeAddDto, Exchange>();
-            CreateMap<Exchange, ExchangeReadDto>();
-            CreateMap<ExchangeReadDto, Exchange>();
+            CreateMap<CoinGeckoExchangeReadDto, Exchange>();
         }
     }
 }

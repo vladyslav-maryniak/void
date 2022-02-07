@@ -1,8 +1,9 @@
-﻿using Microsoft.Extensions.Options;
+﻿using LanguageExt;
+using LanguageExt.SomeHelp;
+using Microsoft.Extensions.Options;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Void.BLL.Extensions;
 using Void.BLL.Models;
 using Void.BLL.Services.Abstractions;
 using Void.DAL.Entities;
@@ -26,7 +27,7 @@ namespace Void.BLL.Services
             this.tickerPairQualityFilterOptions = tickerPairQualityFilterOptions.Value;
         }
 
-        public async Task<TickerPair> GetTickerPairAsync(
+        public async Task<Option<TickerPair>> GetTickerPairAsync(
             string coinId, bool defaultFilters = true, CancellationToken cancellationToken = default)
         {
             var coinTickers = await tickerService.GetTickersAsync(coinId, cancellationToken);
@@ -40,25 +41,20 @@ namespace Void.BLL.Services
 
             coinTickers = tickerService.Filter(coinTickers, tickerFilter);
 
-            if (TryGetTickerPair(coinTickers, out TickerPair tickerPair))
-            {
-                if (tickerPair.Quality.IsValid(tickerPairQualityFilter))
-                {
-                    return tickerPair;
-                }
-            }
-            return null;
+            var tickerPairOption = GetTickerPair(coinTickers);
+
+            return tickerPairOption.Match(
+                tickerPair => GetValidTickerPair(tickerPair, tickerPairQualityFilter), Option<TickerPair>.None);
         }
 
-        private bool TryGetTickerPair(Ticker[] tickers, out TickerPair tickerPair)
+        private Option<TickerPair> GetTickerPair(Ticker[] tickers)
         {
             if (tickers.Length < 2)
             {
-                tickerPair = null;
-                return false;
+                return Option<TickerPair>.None;
             }
 
-            tickerPair = new()
+            TickerPair tickerPair = new()
             {
                 Demand = tickers.OrderBy(x => x.Last)
                                 .First(),
@@ -70,10 +66,15 @@ namespace Void.BLL.Services
                 ProfitPercentage = GetProfitPercentage(tickerPair)
             };
 
-            return true;
+            return tickerPair.ToSome();
         }
 
         private double GetProfitPercentage(TickerPair tickerPair)
             => (double)(tickerPair.Supply.Last / tickerPair.Demand.Last * 100) - 100;
+
+        private Option<TickerPair> GetValidTickerPair(TickerPair tickerPair, TickerPairQualityFilter filter)
+            => tickerPair.Quality.ProfitPercentage > filter.MinProfitPercentage
+                ? tickerPair.ToSome()
+                : Option<TickerPair>.None;
     }
 }

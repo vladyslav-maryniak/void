@@ -1,13 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
 using Void.DAL.Entities;
-using Void.Shared.DTOs.Exchange;
+using Void.WebAPI.Contracts;
+using Void.WebAPI.DTOs.Exchange;
 
 namespace Void.WebAPI.Controllers
 {
@@ -26,46 +25,50 @@ namespace Void.WebAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Exchange>>> GetExchangesAsync(CancellationToken cancellationToken)
+        public async Task<ActionResult<Exchange[]>> GetExchangesAsync(CancellationToken cancellationToken)
         {
             var exchanges = await exchangeService.GetExchangesAsync(cancellationToken);
-            return Ok(mapper.Map<IEnumerable<ExchangeReadDto>>(exchanges));
+            return Ok(mapper.Map<ExchangeReadDto[]>(exchanges));
         }
 
-        [HttpGet("{id}", Name = "GetExchangeAsync")]
+        [HttpGet("{id:regex(^([[a-z0-9]]*)(-[[a-z0-9]]+)*$):length(1,35)}", Name = "GetExchangeAsync")]
         public async Task<ActionResult<ExchangeReadDto>> GetExchangeAsync(string id, CancellationToken cancellationToken)
         {
-            var exchange = await exchangeService.GetExchangeAsync(id, cancellationToken);
-            if (exchange is null)
-            {
-                return NotFound();
-            }
-            return Ok(mapper.Map<ExchangeReadDto>(exchange));
+            var exchangeOption = await exchangeService.GetExchangeAsync(id, cancellationToken);
+            return exchangeOption.Match<ActionResult<ExchangeReadDto>>(exchange =>
+                Ok(mapper.Map<ExchangeReadDto>(exchange)), NotFound());
         }
 
         [HttpPost]
-        public async Task<ActionResult<ExchangeReadDto>> AddExchangeAsync(ExchangeAddDto exchangeAddDto, CancellationToken cancellationToken)
+        public async Task<ActionResult<ExchangeReadDto>> AddExchangeAsync(
+            ExchangeAddDto exchangeAddDto, CancellationToken cancellationToken)
         {
-            var exchange = mapper.Map<Exchange>(exchangeAddDto);
+            var exchangeOption = await exchangeService.AddExchangeAsync(exchangeAddDto.Id, cancellationToken);
+            return exchangeOption.Match<ActionResult<ExchangeReadDto>>(
+                exchange =>
+                {
+                    var exchangeDto = mapper.Map<ExchangeReadDto>(exchange);
+                    return CreatedAtRoute(nameof(GetExchangeAsync), new { exchange.Id }, exchangeDto);
+                },
+                () =>
+                {
+                    ValidationErrorResponse error = new();
+                    ValidationErrorModel model = new()
+                    {
+                        PropertyName = nameof(exchangeAddDto.Id),
+                        Message = "Exchange with provided 'id' already exists"
+                    };
+                    error.Errors.Add(model);
 
-            try
-            {
-                await exchangeService.AddExchangeAsync(exchange, cancellationToken);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest();
-            }
-            var exchangeReadDto = mapper.Map<ExchangeReadDto>(exchange);
-
-            return CreatedAtRoute(nameof(GetExchangeAsync), new { Id = exchangeReadDto.Id }, exchangeReadDto);
+                    return BadRequest(error);
+                });
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:regex(^([[a-z0-9]]*)(-[[a-z0-9]]+)*$):length(1,35)}")]
         public async Task<ActionResult> RemoveExchangeAsync(string id, CancellationToken cancellationToken)
         {
-            await exchangeService.RemoveExchangeAsync(id, cancellationToken);
-            return NoContent();
+            var exchangeOption = await exchangeService.RemoveExchangeAsync(id, cancellationToken);
+            return exchangeOption.Match<ActionResult>(_ => NoContent(), NotFound());
         }
     }
 }
