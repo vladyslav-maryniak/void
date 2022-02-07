@@ -1,5 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System;
+﻿using LanguageExt;
+using LanguageExt.SomeHelp;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -35,17 +36,15 @@ namespace Void.BLL.Services
                 .Include(x => x.Exchange)
                 .ToArrayAsync(cancellationToken);
 
-        public async Task<Ticker> GetTickerAsync(int id, CancellationToken cancellationToken = default)
-            => await context.Tickers
+        public async Task<Option<Ticker>> GetTickerAsync(int id, CancellationToken cancellationToken = default)
+        {
+            var ticker = await context.Tickers
                 .AsNoTracking()
                 .Include(x => x.Coin)
                 .Include(x => x.Exchange)
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-        public async Task RemoveTickerAsync(int id, CancellationToken cancellationToken = default)
-        {
-            context.Remove(new Ticker { Id = id });
-            await context.SaveChangesAsync(cancellationToken);
+            return ticker is null ? Option<Ticker>.None : ticker.ToSome();
         }
 
         public async Task RefreshTickersAsync(

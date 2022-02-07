@@ -85,15 +85,15 @@ namespace Void.BLL.BackgroundServices
 
             using var scope = serviceProvider.CreateScope();
             var tickerPairService = scope.ServiceProvider.GetRequiredService<ITickerPairService>();
-            var tickerPair = await tickerPairService.GetTickerPairAsync(coinId, defaultFilters: false, cancellationToken);
-            
-            if (tickerPair is not null)
+            var tickerPairOption = await tickerPairService.GetTickerPairAsync(coinId, defaultFilters: false, cancellationToken);
+
+            await tickerPairOption.IfSomeAsync(async tickerPair =>
             {
                 var message = JsonConvert.SerializeObject(tickerPair, Formatting.Indented);
                 await notifier.NotifyAsync(message);
 
                 checkingTimestamps[coinId] = DateTime.Now;
-            }
+            });
         }
     }
 }

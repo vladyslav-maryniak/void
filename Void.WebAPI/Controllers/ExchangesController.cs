@@ -1,8 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
@@ -26,46 +24,35 @@ namespace Void.WebAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Exchange>>> GetExchangesAsync(CancellationToken cancellationToken)
+        public async Task<ActionResult<Exchange[]>> GetExchangesAsync(CancellationToken cancellationToken)
         {
             var exchanges = await exchangeService.GetExchangesAsync(cancellationToken);
-            return Ok(mapper.Map<IEnumerable<ExchangeReadDto>>(exchanges));
+            return Ok(mapper.Map<ExchangeReadDto[]>(exchanges));
         }
 
         [HttpGet("{id}", Name = "GetExchangeAsync")]
         public async Task<ActionResult<ExchangeReadDto>> GetExchangeAsync(string id, CancellationToken cancellationToken)
         {
-            var exchange = await exchangeService.GetExchangeAsync(id, cancellationToken);
-            if (exchange is null)
-            {
-                return NotFound();
-            }
-            return Ok(mapper.Map<ExchangeReadDto>(exchange));
+            var exchangeOption = await exchangeService.GetExchangeAsync(id, cancellationToken);
+            return exchangeOption.Match<ActionResult<ExchangeReadDto>>(exchange =>
+                Ok(mapper.Map<ExchangeReadDto>(exchange)), NotFound());
         }
 
         [HttpPost]
-        public async Task<ActionResult<ExchangeReadDto>> AddExchangeAsync(ExchangeAddDto exchangeAddDto, CancellationToken cancellationToken)
+        public async Task<ActionResult<ExchangeReadDto>> AddExchangeAsync(
+            ExchangeAddDto exchangeAddDto, CancellationToken cancellationToken)
         {
-            var exchange = mapper.Map<Exchange>(exchangeAddDto);
-
-            try
-            {
-                await exchangeService.AddExchangeAsync(exchange, cancellationToken);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest();
-            }
-            var exchangeReadDto = mapper.Map<ExchangeReadDto>(exchange);
-
-            return CreatedAtRoute(nameof(GetExchangeAsync), new { Id = exchangeReadDto.Id }, exchangeReadDto);
+            var exchangeOption = await exchangeService.AddExchangeAsync(exchangeAddDto.Id, cancellationToken);
+            return exchangeOption.Match<ActionResult<ExchangeReadDto>>(
+                exchange => CreatedAtRoute(nameof(GetExchangeAsync), new { exchange.Id }, mapper.Map<ExchangeReadDto>(exchange)),
+                BadRequest());
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> RemoveExchangeAsync(string id, CancellationToken cancellationToken)
         {
-            await exchangeService.RemoveExchangeAsync(id, cancellationToken);
-            return NoContent();
+            var exchangeOption = await exchangeService.RemoveExchangeAsync(id, cancellationToken);
+            return exchangeOption.Match<ActionResult>(_ => NoContent(), NotFound());
         }
     }
 }

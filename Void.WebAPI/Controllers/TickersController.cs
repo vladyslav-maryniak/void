@@ -29,22 +29,19 @@ namespace Void.WebAPI.Controllers
             return Ok(mapper.Map<TickerReadDto[]>(tickers));
         }
 
+        [HttpGet("coin/{coinId}")]
+        public async Task<ActionResult<TickerReadDto[]>> GetTickersAsync(string coinId, CancellationToken cancellationToken)
+        {
+            var tickers = await tickerService.GetTickersAsync(coinId, cancellationToken);
+            return Ok(mapper.Map<TickerReadDto[]>(tickers));
+        }
+
         [HttpGet("{id:int}")]
         public async Task<ActionResult<TickerReadDto>> GetTickerAsync(int id, CancellationToken cancellationToken)
         {
-            var ticker = await tickerService.GetTickerAsync(id, cancellationToken);
-            if (ticker is null)
-            {
-                return NotFound();
-            }
-            return Ok(mapper.Map<TickerReadDto>(ticker));
-        }
-
-        [HttpDelete("{id:int}")]
-        public async Task<ActionResult> RemoveTickerAsync(int id, CancellationToken cancellationToken)
-        {
-            await tickerService.RemoveTickerAsync(id, cancellationToken);
-            return NoContent();
+            var tickerOption = await tickerService.GetTickerAsync(id, cancellationToken);
+            return tickerOption.Match<ActionResult<TickerReadDto>>(ticker =>
+                Ok(mapper.Map<TickerReadDto>(ticker)), NotFound());
         }
     }
 }

@@ -25,8 +25,9 @@ namespace Void.WebAPI.Controllers
         [HttpGet("{coinId}")]
         public async Task<ActionResult<TickerPairReadDto>> GetTickerPairAsync(string coinId, bool defaultFilters, CancellationToken cancellationToken)
         {
-            var tickerPair = await tickerPairService.GetTickerPairAsync(coinId, defaultFilters, cancellationToken);
-            return Ok(mapper.Map<TickerPairReadDto>(tickerPair));
+            var tickerPairOption = await tickerPairService.GetTickerPairAsync(coinId, defaultFilters, cancellationToken);
+            return tickerPairOption.Match<ActionResult<TickerPairReadDto>>(tickerPair =>
+                Ok(mapper.Map<TickerPairReadDto>(tickerPair)), NotFound());
         }
     }
 }
