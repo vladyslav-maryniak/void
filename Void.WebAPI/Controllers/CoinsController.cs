@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
+using Void.WebAPI.Contracts;
 using Void.WebAPI.DTOs.Coin;
 
 namespace Void.WebAPI.Controllers
@@ -29,7 +30,7 @@ namespace Void.WebAPI.Controllers
             return Ok(mapper.Map<CoinReadDto[]>(coins));
         }
 
-        [HttpGet("{id}", Name = "GetCoinAsync")]
+        [HttpGet("{id:regex(^([[a-z0-9]]*)(-[[a-z0-9]]+)*$):length(1,55)}", Name = "GetCoinAsync")]
         public async Task<ActionResult<CoinReadDto>> GetCoinAsync(string id, CancellationToken cancellationToken)
         {
             var coinOption = await coinService.GetCoinAsync(id, cancellationToken);
@@ -43,11 +44,26 @@ namespace Void.WebAPI.Controllers
         {
             var coinOption = await coinService.AddCoinAsync(coinAddDto.Id, cancellationToken);
             return coinOption.Match<ActionResult<CoinReadDto>>(
-                coin => CreatedAtRoute(nameof(GetCoinAsync), new { coin.Id }, mapper.Map<CoinReadDto>(coin)),
-                BadRequest());
+                coin =>
+                {
+                    var coinDto = mapper.Map<CoinReadDto>(coin);
+                    return CreatedAtRoute(nameof(GetCoinAsync), new { coin.Id }, coinDto);
+                },
+                () =>
+                {
+                    ValidationErrorResponse error = new();
+                    ValidationErrorModel model = new()
+                    {
+                        PropertyName = nameof(coinAddDto.Id),
+                        Message = "Coin with provided 'id' already exists"
+                    };
+                    error.Errors.Add(model);
+
+                    return BadRequest(error);
+                });
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:regex(^([[a-z0-9]]*)(-[[a-z0-9]]+)*$):length(1,55)}")]
         public async Task<ActionResult> RemoveCoinAsync(string id, CancellationToken cancellationToken)
         {
             var coinOption = await coinService.RemoveCoinAsync(id, cancellationToken);

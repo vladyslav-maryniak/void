@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
 using Void.DAL.Entities;
+using Void.WebAPI.Contracts;
 using Void.WebAPI.DTOs.Exchange;
 
 namespace Void.WebAPI.Controllers
@@ -30,7 +31,7 @@ namespace Void.WebAPI.Controllers
             return Ok(mapper.Map<ExchangeReadDto[]>(exchanges));
         }
 
-        [HttpGet("{id}", Name = "GetExchangeAsync")]
+        [HttpGet("{id:regex(^([[a-z0-9]]*)(-[[a-z0-9]]+)*$):length(1,35)}", Name = "GetExchangeAsync")]
         public async Task<ActionResult<ExchangeReadDto>> GetExchangeAsync(string id, CancellationToken cancellationToken)
         {
             var exchangeOption = await exchangeService.GetExchangeAsync(id, cancellationToken);
@@ -44,11 +45,26 @@ namespace Void.WebAPI.Controllers
         {
             var exchangeOption = await exchangeService.AddExchangeAsync(exchangeAddDto.Id, cancellationToken);
             return exchangeOption.Match<ActionResult<ExchangeReadDto>>(
-                exchange => CreatedAtRoute(nameof(GetExchangeAsync), new { exchange.Id }, mapper.Map<ExchangeReadDto>(exchange)),
-                BadRequest());
+                exchange =>
+                {
+                    var exchangeDto = mapper.Map<ExchangeReadDto>(exchange);
+                    return CreatedAtRoute(nameof(GetExchangeAsync), new { exchange.Id }, exchangeDto);
+                },
+                () =>
+                {
+                    ValidationErrorResponse error = new();
+                    ValidationErrorModel model = new()
+                    {
+                        PropertyName = nameof(exchangeAddDto.Id),
+                        Message = "Exchange with provided 'id' already exists"
+                    };
+                    error.Errors.Add(model);
+
+                    return BadRequest(error);
+                });
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:regex(^([[a-z0-9]]*)(-[[a-z0-9]]+)*$):length(1,35)}")]
         public async Task<ActionResult> RemoveExchangeAsync(string id, CancellationToken cancellationToken)
         {
             var exchangeOption = await exchangeService.RemoveExchangeAsync(id, cancellationToken);

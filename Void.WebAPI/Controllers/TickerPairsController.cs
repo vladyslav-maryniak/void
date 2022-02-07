@@ -22,7 +22,7 @@ namespace Void.WebAPI.Controllers
             this.mapper = mapper;
         }
 
-        [HttpGet("{coinId}")]
+        [HttpGet("{coinId:regex(^([[a-z0-9]]*)(-[[a-z0-9]]+)*$):length(1,55)}")]
         public async Task<ActionResult<TickerPairReadDto>> GetTickerPairAsync(string coinId, bool defaultFilters, CancellationToken cancellationToken)
         {
             var tickerPairOption = await tickerPairService.GetTickerPairAsync(coinId, defaultFilters, cancellationToken);

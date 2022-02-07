@@ -2,7 +2,7 @@
 using Void.DAL.Entities;
 using Void.WebAPI.DTOs.Ticker;
 
-namespace Void.BLL.AutoMapperProfiles
+namespace Void.WebAPI.AutoMapperProfiles
 {
     public class TickerProfile : Profile
     {
