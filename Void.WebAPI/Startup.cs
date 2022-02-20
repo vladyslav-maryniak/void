@@ -3,7 +3,6 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,16 +51,8 @@ namespace Void.WebAPI
             services.Configure<DiscordOptions>(Configuration.GetSection(DiscordOptions.Key));
             services.Configure<RefreshOptions>(Configuration.GetSection(RefreshOptions.Key));
 
-            SqlConnectionStringBuilder csb = new()
-            {
-                DataSource = Configuration["Database:DataSource"],
-                InitialCatalog = Configuration["Database:InitialCatalog"],
-                IntegratedSecurity = bool.Parse(Configuration["Database:IntegratedSecurity"]),
-                UserID = Configuration["Database:UserID"],
-                Password = Configuration["Database:Password"]
-            };
             services.AddDbContext<VoidContext>(options =>
-                options.UseSqlServer(csb.ConnectionString)
+                options.UseSqlServer(Configuration["ConnectionStrings:DefaultDatabase"])
             );
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
