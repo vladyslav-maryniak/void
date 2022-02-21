@@ -1,9 +1,6 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -11,6 +8,8 @@ using System.Threading.Tasks;
 using Void.BLL.DTOs.Coin;
 using Void.BLL.DTOs.Exchange;
 using Void.BLL.DTOs.Ticker;
+using Void.BLL.Extensions;
+using Void.BLL.Models;
 using Void.BLL.Services.Abstractions;
 using Void.DAL.Entities;
 using Void.Shared.Options;
@@ -20,33 +19,28 @@ namespace Void.BLL.Services
     public class CoinGeckoProvider : ICryptoDataProvider
     {
         private readonly HttpClient httpClient;
+        private readonly CoinGeckoOptions coinGeckoOptions;
         private readonly IMapper mapper;
-        private readonly string baseUri;
 
-        public CoinGeckoProvider(HttpClient httpClient, IOptions<CoinGeckoOptions> options, IMapper mapper)
+        public CoinGeckoProvider(HttpClient httpClient, IOptions<CoinGeckoOptions> coinGeckoOptions, IMapper mapper)
         {
             this.httpClient = httpClient;
+            this.coinGeckoOptions = coinGeckoOptions.Value;
             this.mapper = mapper;
-            baseUri = $"{options.Value.Scheme}://{options.Value.Host}{options.Value.BasePath}";
         }
 
         public async Task<Ticker[]> GetCoinTickersAsync(
             string id, string[] exchangeIds, CancellationToken cancellationToken = default)
         {
-            var requestUri = GetCoinTickersUri(id, exchangeIds);
-            var coinTickersDto = 
-                await GetDeserializedHttpResponseBodyAsync<CoinGeckoCoinTickersReadDto>(requestUri, cancellationToken);
-            
-            return mapper.Map<Ticker[]>(coinTickersDto.Tickers);
+            var request = GetCoinTickersRequest(id, exchangeIds);
+            var coinTickers = await GetMappedHttpContentAsync<CoinGeckoCoinTickersReadDto, CoinTickers>(request, cancellationToken);
+            return coinTickers.Tickers;
         }
 
         public async Task<Coin[]> GetSupportedCoinsAsync(CancellationToken cancellationToken = default)
         {
-            var requestUri = GetSupportedCoinsUri();
-            var coinDtos =
-                await GetDeserializedHttpResponseBodyAsync<CoinGeckoCoinReadDto[]>(requestUri, cancellationToken);
-
-            return mapper.Map<Coin[]>(coinDtos);
+            var request = GetSupportedCoinsRequest();
+            return await GetMappedHttpContentAsync<CoinGeckoCoinReadDto[], Coin[]>(request, cancellationToken);
         }
 
         public async Task<Coin> GetSupportedCoinAsync(string id, CancellationToken cancellationToken = default)
@@ -57,11 +51,8 @@ namespace Void.BLL.Services
 
         public async Task<Exchange[]> GetSupportedExchangesAsync(CancellationToken cancellationToken = default)
         {
-            var requestUri = GetSupportedExchangesUri();
-            var exchangeDtos =
-                await GetDeserializedHttpResponseBodyAsync<CoinGeckoExchangeReadDto[]>(requestUri, cancellationToken);
-
-            return mapper.Map<Exchange[]>(exchangeDtos);
+            var request = GetSupportedExchangesRequest();
+            return await GetMappedHttpContentAsync<CoinGeckoExchangeReadDto[], Exchange[]>(request, cancellationToken);
         }
 
         public async Task<Exchange> GetSupportedExchangeAsync(string id, CancellationToken cancellationToken = default)
@@ -70,27 +61,50 @@ namespace Void.BLL.Services
             return supportedExchanges.First(x => x.Id == id);
         }
 
-        private async Task<T> GetDeserializedHttpResponseBodyAsync<T>(
-            Uri requestUri, CancellationToken cancellationToken)
+        private async Task<TDestination> GetMappedHttpContentAsync<TSource, TDestination>(
+            HttpRequestMessage request, CancellationToken cancellationToken = default)
         {
-            var response = await httpClient.GetAsync(requestUri, cancellationToken);
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            return JsonConvert.DeserializeObject<T>(content);
+            var response = await httpClient.SendAsync(request, cancellationToken);
+            var content = await response.Content.ReadAsAsync<TSource>(cancellationToken);
+            return mapper.Map<TDestination>(content);
         }
 
-        private Uri GetCoinTickersUri(string id, string[] exchangeIds)
+        private HttpRequestMessage GetCoinTickersRequest(string id, string[] exchangeIds)
         {
-            var endpoint = $"{baseUri}/coins/{id}/tickers";
-            Dictionary<string, string> parameters = new()
+            var httpMethod = HttpMethod.Get;
+            var path = $"/coins/{id}/tickers";
+            var query = new NameValueCollection
             {
-                ["depth"] = "true",
-                ["exchange_ids"] = string.Join(',', exchangeIds)
-            };
-            return new (QueryHelpers.AddQueryString(endpoint, parameters));
+                { "depth", "true" },
+                { "exchange_ids", string.Join(',', exchangeIds) }
+            }.ToQueryString();
+
+            return CreateHttpRequest(httpMethod, path, query);
         }
 
-        private Uri GetSupportedCoinsUri() => new($"{baseUri}/coins/list");
+        private HttpRequestMessage GetSupportedCoinsRequest()
+        {
+            var httpMethod = HttpMethod.Get;
+            var path = $"/coins/list";
+            return CreateHttpRequest(httpMethod, path);
+        }
 
-        private Uri GetSupportedExchangesUri() => new($"{baseUri}/exchanges/list");
+        private HttpRequestMessage GetSupportedExchangesRequest()
+        {
+            var httpMethod = HttpMethod.Get;
+            var path = $"/exchanges/list";
+            return CreateHttpRequest(httpMethod, path);
+        }
+
+        private HttpRequestMessage CreateHttpRequest(HttpMethod httpMethod, string path, string query = default)
+        {
+            path = coinGeckoOptions.ApiPrefix + path;
+            
+            if (string.IsNullOrEmpty(query))
+            {
+                return new(httpMethod, path);
+            }
+            return new(httpMethod, $"{path}?{query}");
+        }
     }
 }

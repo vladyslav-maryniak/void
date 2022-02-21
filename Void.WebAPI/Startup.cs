@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using System;
 using System.Reflection;
 using Void.BLL.BackgroundServices;
 using Void.BLL.Services;
@@ -37,9 +38,12 @@ namespace Void.WebAPI
             
             services.AddTransient<ICryptoDataProvider, CoinGeckoProvider>();
             services.AddSingleton<INotifier, DiscordNotifier>();
+            services.AddHttpClient<ICryptoDataProvider, CoinGeckoProvider>(client =>
+            {
+                client.BaseAddress = new Uri($"{Configuration["CoinGecko:Scheme"]}://{Configuration["CoinGecko:Host"]}");
+            });
 
             services.AddHostedService<CoinGeckoRefreshService>();
-            services.AddHttpClient();
             services.AddSingleton<DiscordSocketClient>();
 
             services.AddAutoMapper(Assembly.GetAssembly(typeof(BLL.AutoMapperProfiles.CoinProfile)));
