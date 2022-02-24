@@ -8,13 +8,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using System;
 using System.Reflection;
 using Void.BLL.BackgroundServices;
 using Void.BLL.Services;
 using Void.BLL.Services.Abstractions;
 using Void.DAL;
 using Void.Shared.Options;
+using Void.WebAPI.Extensions;
 using Void.WebAPI.Filter;
 
 namespace Void.WebAPI
@@ -35,16 +35,16 @@ namespace Void.WebAPI
             services.AddTransient<ITickerService, TickerService>();
             services.AddTransient<IExchangeService, ExchangeService>();
             services.AddTransient<ITickerPairService, TickerPairService>();
-            
+
             services.AddTransient<ICryptoDataProvider, CoinGeckoProvider>();
             services.AddSingleton<INotifier, DiscordNotifier>();
-            services.AddHttpClient<ICryptoDataProvider, CoinGeckoProvider>(client =>
-            {
-                client.BaseAddress = new Uri($"{Configuration["CoinGecko:Scheme"]}://{Configuration["CoinGecko:Host"]}");
-            });
 
             services.AddHostedService<CoinGeckoRefreshService>();
             services.AddSingleton<DiscordSocketClient>();
+
+            services.AddHttpClients(Configuration);
+            
+            services.AddCustomMiddlewares();
 
             services.AddAutoMapper(Assembly.GetAssembly(typeof(BLL.AutoMapperProfiles.CoinProfile)));
             services.AddAutoMapper(Assembly.GetAssembly(typeof(WebAPI.AutoMapperProfiles.TickerProfile)));
@@ -92,7 +92,7 @@ namespace Void.WebAPI
         {
             if (env.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
+                // app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Void.WebAPI v1"));
             }
@@ -103,6 +103,8 @@ namespace Void.WebAPI
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UsePolicyExceptionHandling();
 
             app.UseEndpoints(endpoints =>
             {
