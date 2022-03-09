@@ -1,6 +1,7 @@
 ﻿using LanguageExt;
 using LanguageExt.SomeHelp;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -39,7 +40,7 @@ namespace Void.BLL.Services
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-            return coin is null ? Option<Coin>.None : coin.ToSome();
+            return coin?.ToSome() ?? Option<Coin>.None;
         }
 
         public async Task<Option<Coin>> AddCoinAsync(string id, CancellationToken cancellationToken = default)
@@ -60,6 +61,49 @@ namespace Void.BLL.Services
         public async Task<Option<Coin>> RemoveCoinAsync(string id, CancellationToken cancellationToken = default)
         {
             var coinOption = await GetCoinAsync(id, cancellationToken);
+
+            await coinOption.IfSomeAsync(async coin =>
+            {
+                context.Remove(coin);
+                await context.SaveChangesAsync(cancellationToken);
+            });
+
+            return coinOption;
+        }
+
+        public async Task<BlacklistedCoin[]> GetBlacklistedCoinsAsync(CancellationToken cancellationToken = default)
+            => await context.BlacklistedCoins
+                .AsNoTracking()
+                .ToArrayAsync(cancellationToken);
+
+        public async Task<Option<BlacklistedCoin>> GetBlacklistedCoinAsync(string id, CancellationToken cancellationToken = default)
+        {
+            var coin = await context.BlacklistedCoins
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+            return coin?.ToSome() ?? Option<BlacklistedCoin>.None;
+        }
+
+        public async Task<Option<BlacklistedCoin>> BlacklistCoinAsync(
+            BlacklistedCoin blacklistedCoin, CancellationToken cancellationToken = default)
+        {
+            if (await context.BlacklistedCoins.AsQueryable().AnyAsync(x => x.Id == blacklistedCoin.Id, cancellationToken))
+            {
+                return Option<BlacklistedCoin>.None;
+            }
+
+            blacklistedCoin.BlacklistedAt = DateTime.UtcNow;
+
+            await context.AddAsync(blacklistedCoin, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
+
+            return blacklistedCoin.ToSome();
+        }
+
+        public async Task<Option<BlacklistedCoin>> RemoveBlacklistedCoinAsync(string id, CancellationToken cancellationToken = default)
+        {
+            var coinOption = await GetBlacklistedCoinAsync(id, cancellationToken);
 
             await coinOption.IfSomeAsync(async coin =>
             {

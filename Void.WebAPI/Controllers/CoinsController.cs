@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
+using Void.DAL.Entities;
 using Void.WebAPI.Contracts;
 using Void.WebAPI.DTOs.Coin;
 
@@ -40,9 +41,9 @@ namespace Void.WebAPI.Controllers
 
         [HttpPost]
         public async Task<ActionResult<CoinReadDto>> AddCoinAsync(
-            CoinAddDto coinAddDto, CancellationToken cancellationToken)
+            CoinAddDto coinDto, CancellationToken cancellationToken)
         {
-            var coinOption = await coinService.AddCoinAsync(coinAddDto.Id, cancellationToken);
+            var coinOption = await coinService.AddCoinAsync(coinDto.Id, cancellationToken);
             return coinOption.Match<ActionResult<CoinReadDto>>(
                 coin =>
                 {
@@ -54,8 +55,8 @@ namespace Void.WebAPI.Controllers
                     ValidationErrorResponse error = new();
                     ValidationErrorModel model = new()
                     {
-                        PropertyName = nameof(coinAddDto.Id),
-                        Message = "Coin with provided 'id' already exists"
+                        PropertyName = nameof(coinDto.Id),
+                        Message = "Coin with provided 'id' has already been added"
                     };
                     error.Errors.Add(model);
 
@@ -68,6 +69,62 @@ namespace Void.WebAPI.Controllers
         {
             var coinOption = await coinService.RemoveCoinAsync(id, cancellationToken);
             return coinOption.Match<ActionResult>(_ => NoContent(), NotFound());
+        }
+
+        [HttpGet("blacklist")]
+        public async Task<ActionResult<BlacklistedCoinReadDto[]>> GetBlacklistedCoinsAsync(CancellationToken cancellationToken)
+        {
+            var coins = await coinService.GetBlacklistedCoinsAsync(cancellationToken);
+            return Ok(mapper.Map<BlacklistedCoinReadDto[]>(coins));
+        }
+
+        [HttpGet("blacklist/{id:regex(^([[a-z0-9]]*)(-[[a-z0-9]]+)*$):length(1,55)}", Name = "GetBlacklistedCoinAsync")]
+        public async Task<ActionResult<BlacklistedCoinReadDto>> GetBlacklistedCoinAsync(string id, CancellationToken cancellationToken)
+        {
+            var coinOption = await coinService.GetBlacklistedCoinAsync(id, cancellationToken);
+            return coinOption.Match<ActionResult<BlacklistedCoinReadDto>>(coin =>
+                Ok(mapper.Map<BlacklistedCoinReadDto>(coin)), NotFound());
+        }
+
+        [HttpPost("blacklist")]
+        public async Task<ActionResult<BlacklistedCoinReadDto>> BlacklistCoinAsync(
+            BlacklistedCoinAddDto coinDto, CancellationToken cancellationToken)
+        {
+            var blacklistedCoin = mapper.Map<BlacklistedCoin>(coinDto);
+            var coinOption = await coinService.BlacklistCoinAsync(blacklistedCoin, cancellationToken);
+            return await coinOption.MatchAsync<BlacklistedCoin, ActionResult<BlacklistedCoinReadDto>>(
+                async coin =>
+                {
+                    await coinService.RemoveCoinAsync(coin.Id, cancellationToken);
+
+                    var coinDto = mapper.Map<BlacklistedCoinReadDto>(coin);
+                    return CreatedAtRoute(nameof(GetBlacklistedCoinAsync), new { coin.Id }, coinDto);
+                },
+                () =>
+                {
+                    ValidationErrorResponse error = new();
+                    ValidationErrorModel model = new()
+                    {
+                        PropertyName = nameof(coinDto.Id),
+                        Message = "Coin with provided 'id' has already been blacklisted"
+                    };
+                    error.Errors.Add(model);
+
+                    return BadRequest(error);
+                });
+        }
+
+        [HttpDelete("blacklist/{id:regex(^([[a-z0-9]]*)(-[[a-z0-9]]+)*$):length(1,55)}")]
+        public async Task<ActionResult<BlacklistedCoinReadDto>> RemoveBlacklistedCoinAsync(string id, CancellationToken cancellationToken)
+        {
+            var coinOption = await coinService.RemoveBlacklistedCoinAsync(id, cancellationToken);
+            return await coinOption.MatchAsync<BlacklistedCoin, ActionResult<BlacklistedCoinReadDto>>(
+                async coin =>
+                {
+                    await coinService.AddCoinAsync(coin.Id, cancellationToken);
+                    return NoContent();
+                },
+                () => NotFound());
         }
     }
 }

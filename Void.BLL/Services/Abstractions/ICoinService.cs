@@ -13,5 +13,10 @@ namespace Void.BLL.Services.Abstractions
         Task<Option<Coin>> GetCoinAsync(string id, CancellationToken cancellationToken = default);
         Task<Option<Coin>> AddCoinAsync(string id, CancellationToken cancellationToken = default);
         Task<Option<Coin>> RemoveCoinAsync(string id, CancellationToken cancellationToken = default);
+        Task<BlacklistedCoin[]> GetBlacklistedCoinsAsync(CancellationToken cancellationToken = default);
+        Task<Option<BlacklistedCoin>> GetBlacklistedCoinAsync(string id, CancellationToken cancellationToken = default);
+        Task<Option<BlacklistedCoin>> BlacklistCoinAsync(
+            BlacklistedCoin blacklistedCoin, CancellationToken cancellationToken = default);
+        Task<Option<BlacklistedCoin>> RemoveBlacklistedCoinAsync(string id, CancellationToken cancellationToken = default);
     }
 }
