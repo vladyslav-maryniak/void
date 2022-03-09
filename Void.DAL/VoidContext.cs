@@ -13,6 +13,7 @@ namespace Void.DAL
         public DbSet<Coin> Coins { get; set; }
         public DbSet<Exchange> Exchanges { get; set; }
         public DbSet<Ticker> Tickers { get; set; }
+        public DbSet<BlacklistedCoin> BlacklistedCoins { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
