@@ -10,7 +10,6 @@ namespace Void.WebAPI.AutoMapperProfiles
         {
             CreateMap<ExchangeAddDto, Exchange>();
             CreateMap<Exchange, ExchangeReadDto>();
-            CreateMap<ExchangeReadDto, Exchange>();
         }
     }
 }

@@ -31,7 +31,7 @@ namespace Void.BLL.Services
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-            return exchange is null ? Option<Exchange>.None : exchange.ToSome();
+            return exchange?.ToSome() ?? Option<Exchange>.None;
         }
 
         public async Task<Option<Exchange>> AddExchangeAsync(string id, CancellationToken cancellationToken = default)

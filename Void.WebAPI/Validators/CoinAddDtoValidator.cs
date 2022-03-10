@@ -1,26 +1,23 @@
 ﻿using FluentValidation;
-using System.Linq;
 using Void.BLL.Services.Abstractions;
 using Void.WebAPI.DTOs.Coin;
+using Void.WebAPI.Validators.Extensions;
 
 namespace Void.WebAPI.Validators
 {
     public class CoinAddDtoValidator : AbstractValidator<CoinAddDto>
     {
-        public CoinAddDtoValidator(ICryptoDataProvider dataProvider)
+        public CoinAddDtoValidator(ICryptoDataProvider dataProvider, ICoinService coinService)
         {
             RuleFor(x => x.Id)
                 .Cascade(CascadeMode.Stop)
-                .NotNull()
-                .NotEmpty()
-                .Length(1, 55)
-                .Matches("^([a-z0-9]*)(-[a-z0-9]+)*$")
+                .IsCoinId(dataProvider)
                 .MustAsync(async (id, cancellationToken) =>
                 {
-                    var coins = await dataProvider.GetSupportedCoinsAsync(cancellationToken);
-                    return coins.Select(x => x.Id).Contains(id);
+                    var coinOptions = await coinService.GetBlacklistedCoinAsync(id, cancellationToken);
+                    return coinOptions.IsNone;
                 })
-                .WithMessage("Could not find coin with the given 'Id'");
+                .WithMessage("Coin with the given 'Id' exists in the blacklist");;
         }
     }
 }

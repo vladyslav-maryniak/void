@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
-using Void.DAL.Entities;
 using Void.WebAPI.Contracts;
 using Void.WebAPI.DTOs.Exchange;
 
@@ -25,7 +24,7 @@ namespace Void.WebAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<Exchange[]>> GetExchangesAsync(CancellationToken cancellationToken)
+        public async Task<ActionResult<ExchangeReadDto[]>> GetExchangesAsync(CancellationToken cancellationToken)
         {
             var exchanges = await exchangeService.GetExchangesAsync(cancellationToken);
             return Ok(mapper.Map<ExchangeReadDto[]>(exchanges));
@@ -41,9 +40,9 @@ namespace Void.WebAPI.Controllers
 
         [HttpPost]
         public async Task<ActionResult<ExchangeReadDto>> AddExchangeAsync(
-            ExchangeAddDto exchangeAddDto, CancellationToken cancellationToken)
+            ExchangeAddDto exchangeDto, CancellationToken cancellationToken)
         {
-            var exchangeOption = await exchangeService.AddExchangeAsync(exchangeAddDto.Id, cancellationToken);
+            var exchangeOption = await exchangeService.AddExchangeAsync(exchangeDto.Id, cancellationToken);
             return exchangeOption.Match<ActionResult<ExchangeReadDto>>(
                 exchange =>
                 {
@@ -55,7 +54,7 @@ namespace Void.WebAPI.Controllers
                     ValidationErrorResponse error = new();
                     ValidationErrorModel model = new()
                     {
-                        PropertyName = nameof(exchangeAddDto.Id),
+                        PropertyName = nameof(exchangeDto.Id),
                         Message = "Exchange with provided 'id' already exists"
                     };
                     error.Errors.Add(model);

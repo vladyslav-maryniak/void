@@ -2,8 +2,9 @@
 
 namespace Void.WebAPI.DTOs.Coin
 {
-    public class CoinAddDto : IIdentifiable<string>
+    public class BlacklistedCoinAddDto : IIdentifiable<string>
     {
         public string Id { get; set; }
+        public string Reason { get; set; }
     }
 }

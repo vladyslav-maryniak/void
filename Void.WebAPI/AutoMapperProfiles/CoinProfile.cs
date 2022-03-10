@@ -10,7 +10,9 @@ namespace Void.WebAPI.AutoMapperProfiles
         {
             CreateMap<CoinAddDto, Coin>();
             CreateMap<Coin, CoinReadDto>();
-            CreateMap<CoinReadDto, Coin>();
+
+            CreateMap<BlacklistedCoinAddDto, BlacklistedCoin>();
+            CreateMap<BlacklistedCoin, BlacklistedCoinReadDto>();
         }
     }
 }
