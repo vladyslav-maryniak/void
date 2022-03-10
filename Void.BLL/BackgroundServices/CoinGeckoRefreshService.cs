@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Polly.CircuitBreaker;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,7 @@ namespace Void.BLL.BackgroundServices
     {
         private readonly INotifier notifier;
         private readonly IServiceProvider serviceProvider;
+        private readonly CoinGeckoOptions coinGeckoOptions;
         private readonly RefreshOptions refreshOptions;
 
         private Dictionary<string, DateTime> checkingTimestamps;
@@ -24,10 +26,12 @@ namespace Void.BLL.BackgroundServices
         public CoinGeckoRefreshService(
             INotifier notifier,
             IServiceProvider serviceProvider,
-            IOptions<RefreshOptions> refreshOptions)
+            IOptions<RefreshOptions> refreshOptions,
+            IOptions<CoinGeckoOptions> coinGeckoOptions)
         {
             this.notifier = notifier;
             this.serviceProvider = serviceProvider;
+            this.coinGeckoOptions = coinGeckoOptions.Value;
             this.refreshOptions = refreshOptions.Value;
 
             checkingTimestamps = new();
@@ -45,8 +49,17 @@ namespace Void.BLL.BackgroundServices
             {
                 if (CoinEnumerator.MoveNext())
                 {
-                    await RefreshTickersAsync(CoinEnumerator.Current.Id, stoppingToken);
-                    await CheckCoinTickersAsync(CoinEnumerator.Current.Id, stoppingToken);
+                    try
+                    {
+                        await RefreshTickersAsync(CoinEnumerator.Current.Id, stoppingToken);
+                        await CheckCoinTickersAsync(CoinEnumerator.Current.Id, stoppingToken);
+                    }
+                    catch (BrokenCircuitException)
+                    {
+                        await Task.Delay(
+                            TimeSpan.FromSeconds(coinGeckoOptions.Policy.AdvancedCircuitBreaker.DurationOfBreak),
+                            stoppingToken);
+                    }
                 }
                 else
                 {
