@@ -3,7 +3,6 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +14,7 @@ using Void.BLL.Services;
 using Void.BLL.Services.Abstractions;
 using Void.DAL;
 using Void.Shared.Options;
+using Void.WebAPI.Extensions;
 using Void.WebAPI.Filter;
 
 namespace Void.WebAPI
@@ -35,13 +35,16 @@ namespace Void.WebAPI
             services.AddTransient<ITickerService, TickerService>();
             services.AddTransient<IExchangeService, ExchangeService>();
             services.AddTransient<ITickerPairService, TickerPairService>();
-            
+
             services.AddTransient<ICryptoDataProvider, CoinGeckoProvider>();
             services.AddSingleton<INotifier, DiscordNotifier>();
 
             services.AddHostedService<CoinGeckoRefreshService>();
-            services.AddHttpClient();
             services.AddSingleton<DiscordSocketClient>();
+
+            services.AddHttpClients(Configuration);
+            
+            services.AddCustomMiddlewares();
 
             services.AddAutoMapper(Assembly.GetAssembly(typeof(BLL.AutoMapperProfiles.CoinProfile)));
             services.AddAutoMapper(Assembly.GetAssembly(typeof(WebAPI.AutoMapperProfiles.TickerProfile)));
@@ -52,16 +55,8 @@ namespace Void.WebAPI
             services.Configure<DiscordOptions>(Configuration.GetSection(DiscordOptions.Key));
             services.Configure<RefreshOptions>(Configuration.GetSection(RefreshOptions.Key));
 
-            SqlConnectionStringBuilder csb = new()
-            {
-                DataSource = Configuration["Database:DataSource"],
-                InitialCatalog = Configuration["Database:InitialCatalog"],
-                IntegratedSecurity = bool.Parse(Configuration["Database:IntegratedSecurity"]),
-                UserID = Configuration["Database:UserID"],
-                Password = Configuration["Database:Password"]
-            };
             services.AddDbContext<VoidContext>(options =>
-                options.UseSqlServer(csb.ConnectionString)
+                options.UseSqlServer(Configuration["ConnectionStrings:DefaultDatabase"])
             );
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -97,7 +92,7 @@ namespace Void.WebAPI
         {
             if (env.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
+                // app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Void.WebAPI v1"));
             }
@@ -108,6 +103,8 @@ namespace Void.WebAPI
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UsePolicyExceptionHandling();
 
             app.UseEndpoints(endpoints =>
             {
