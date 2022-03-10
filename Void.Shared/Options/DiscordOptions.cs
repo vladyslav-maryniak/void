@@ -5,5 +5,6 @@
         public static string Key => "Discord";
         public string Token { get; set; }
         public ulong ChannelId { get; set; }
+        public DiscordPolicyOptions Policy { get; set; }
     }
 }

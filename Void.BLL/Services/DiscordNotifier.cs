@@ -1,7 +1,11 @@
 ﻿using Discord;
+using Discord.Net;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Polly;
+using Polly.Contrib.WaitAndRetry;
+using Polly.Wrap;
 using System;
 using System.Threading.Tasks;
 using Void.BLL.Services.Abstractions;
@@ -13,8 +17,9 @@ namespace Void.BLL.Services
     {
         private readonly ILogger<DiscordNotifier> logger;
         private readonly DiscordSocketClient discordClient;
-        private readonly DiscordOptions discordOptions;
+        private readonly DiscordOptions options;
         private IMessageChannel discordChannel;
+        private readonly AsyncPolicyWrap policyWrap;
         private bool isDisposed = false;
 
         public DiscordNotifier(
@@ -24,24 +29,42 @@ namespace Void.BLL.Services
         {
             this.logger = logger;
             this.discordClient = discordClient;
-            this.discordOptions = discordOptions.Value;
+            options = discordOptions.Value;
+            
+            var waitAndRetryPolicy = Policy.Handle<HttpException>()
+                .WaitAndRetryAsync(
+                    Backoff.DecorrelatedJitterBackoffV2(
+                        TimeSpan.FromSeconds(options.Policy.WaitAndRetry.MedianFirstRetryDelay),
+                    options.Policy.WaitAndRetry.RetryCount));
+
+            var breakerPolicy = Policy.Handle<HttpException>()
+                .AdvancedCircuitBreakerAsync(
+                    options.Policy.AdvancedCircuitBreaker.FailureThreshold,
+                    TimeSpan.FromSeconds(options.Policy.AdvancedCircuitBreaker.SamplingDuration),
+                    options.Policy.AdvancedCircuitBreaker.MinimumThroughput,
+                    TimeSpan.FromSeconds(options.Policy.AdvancedCircuitBreaker.DurationOfBreak));
+
+            policyWrap = Policy.WrapAsync(waitAndRetryPolicy, breakerPolicy);
         }
 
         public async Task NotifyAsync(string message)
         {
-            if (discordClient.ConnectionState == ConnectionState.Disconnected)
+            await policyWrap.ExecuteAsync(async () =>
             {
-                await ConnectAsync();
-            }
-            await discordChannel.SendMessageAsync(message);
+                if (discordClient.ConnectionState == ConnectionState.Disconnected)
+                {
+                    await ConnectAsync();
+                }
+                await discordChannel.SendMessageAsync(message);
+            });
         }
 
         private async Task ConnectAsync()
         {
             discordClient.Log += DiscordClient_Log;
-            await discordClient.LoginAsync(TokenType.Bot, discordOptions.Token);
+            await discordClient.LoginAsync(TokenType.Bot, options.Token);
             await discordClient.StartAsync();
-            discordChannel = await discordClient.GetChannelAsync(discordOptions.ChannelId) as IMessageChannel;
+            discordChannel = await discordClient.GetChannelAsync(options.ChannelId) as IMessageChannel;
         }
 
         private async Task DisconnectAsync()
@@ -61,7 +84,11 @@ namespace Void.BLL.Services
         {
             if (!isDisposed)
             {
-                await DisconnectAsync().ConfigureAwait(false);
+                await policyWrap.ExecuteAsync(async () =>
+                {
+                    await DisconnectAsync().ConfigureAwait(false);
+                });
+
                 isDisposed = true;
             }
         }
