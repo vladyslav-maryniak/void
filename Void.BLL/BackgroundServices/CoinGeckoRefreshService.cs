@@ -58,6 +58,8 @@ namespace Void.BLL.BackgroundServices
                     {
                         await RefreshTickersAsync(CoinEnumerator.Current.Id, stoppingToken);
                         await CheckCoinTickersAsync(CoinEnumerator.Current.Id, stoppingToken);
+                        
+                        await Task.Delay(TimeSpan.FromMilliseconds(refreshOptions.Delay), stoppingToken);
                     }
                     catch (BrokenCircuitException)
                     {
@@ -65,13 +67,21 @@ namespace Void.BLL.BackgroundServices
                             TimeSpan.FromSeconds(coinGeckoOptions.Policy.AdvancedCircuitBreaker.DurationOfBreak),
                             stoppingToken);
                     }
+                    catch (Exception e)
+                    {
+                        await notifier.NotifyAsync(
+                            string.Join(Environment.NewLine,
+                                CoinEnumerator.Current.Id,
+                                e.Message,
+                                e.InnerException?.Message ?? string.Empty,
+                                e.ToString()));
+                    }
                 }
                 else
                 {
                     CoinEnumerator.Dispose();
                     CoinEnumerator = coinService.CoinEnumerator;
                 }
-                await Task.Delay(TimeSpan.FromMilliseconds(refreshOptions.Delay), stoppingToken);
             }
         }
 
