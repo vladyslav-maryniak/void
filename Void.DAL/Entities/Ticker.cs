@@ -37,10 +37,10 @@ namespace Void.DAL.Entities
                    .HasPrecision(18, 10);
 
             builder.Property(x => x.CostToMoveUpUsd)
-                   .HasPrecision(18, 10);
+                   .HasPrecision(18, 8);
 
             builder.Property(x => x.CostToMoveDownUsd)
-                   .HasPrecision(18, 10);
+                   .HasPrecision(18, 8);
 
             builder.HasOne(x => x.Coin)
                    .WithMany()

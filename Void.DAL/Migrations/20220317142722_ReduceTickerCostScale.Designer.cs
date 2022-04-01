@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Void.DAL;
 
 namespace Void.DAL.Migrations
 {
     [DbContext(typeof(VoidContext))]
-    partial class VoidContextModelSnapshot : ModelSnapshot
+    [Migration("20220317142722_ReduceTickerCostScale")]
+    partial class ReduceTickerCostScale
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

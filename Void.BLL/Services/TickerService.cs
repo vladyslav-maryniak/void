@@ -55,10 +55,24 @@ namespace Void.BLL.Services
                 .Where(x => x.CoinId == coinId)
                 .ToArrayAsync(cancellationToken);
 
-            context.RemoveRange(obsoleteCoinTickers);
-            await context.AddRangeAsync(coinTickers, cancellationToken);
+            if (obsoleteCoinTickers.Length > 0)
+            {
+                context.RemoveRange(obsoleteCoinTickers);
+            }
 
-            await context.SaveChangesAsync(cancellationToken);
+            var targetCoinTickers = coinTickers
+                .Where(x => x.CoinId == coinId)
+                .ToArray();
+
+            if (targetCoinTickers.Length > 0)
+            {
+                await context.AddRangeAsync(targetCoinTickers, cancellationToken);
+            }
+
+            if (context.ChangeTracker.HasChanges())
+            {
+                await context.SaveChangesAsync(cancellationToken);
+            }
         }
 
         public Ticker[] Filter(Ticker[] tickers, TickerFilter filter)
