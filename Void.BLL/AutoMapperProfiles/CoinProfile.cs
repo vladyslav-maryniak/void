@@ -9,6 +9,7 @@ namespace Void.BLL.AutoMapperProfiles
         public CoinProfile()
         {
             CreateMap<CoinGeckoCoinReadDto, Coin>();
+            CreateMap<Coin, CoinNotificationReadDto>();
         }
     }
 }

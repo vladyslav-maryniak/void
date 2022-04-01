@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using AutoMapper;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -8,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Void.BLL.DTOs.Ticker;
 using Void.BLL.Services.Abstractions;
 using Void.DAL.Entities;
 using Void.Shared.Options;
@@ -17,6 +19,7 @@ namespace Void.BLL.BackgroundServices
     public class CoinGeckoRefreshService : BackgroundService
     {
         private readonly INotifier notifier;
+        private readonly IMapper mapper;
         private readonly IServiceProvider serviceProvider;
         private readonly CoinGeckoOptions coinGeckoOptions;
         private readonly RefreshOptions refreshOptions;
@@ -25,11 +28,13 @@ namespace Void.BLL.BackgroundServices
 
         public CoinGeckoRefreshService(
             INotifier notifier,
+            IMapper mapper,
             IServiceProvider serviceProvider,
             IOptions<RefreshOptions> refreshOptions,
             IOptions<CoinGeckoOptions> coinGeckoOptions)
         {
             this.notifier = notifier;
+            this.mapper = mapper;
             this.serviceProvider = serviceProvider;
             this.coinGeckoOptions = coinGeckoOptions.Value;
             this.refreshOptions = refreshOptions.Value;
@@ -102,7 +107,9 @@ namespace Void.BLL.BackgroundServices
 
             await tickerPairOption.IfSomeAsync(async tickerPair =>
             {
-                var message = JsonConvert.SerializeObject(tickerPair, Formatting.Indented);
+                var notificationDto = mapper.Map<TickerPairNotificationReadDto>(tickerPair);
+                var message = JsonConvert.SerializeObject(notificationDto, Formatting.Indented);
+                
                 await notifier.NotifyAsync(message);
 
                 checkingTimestamps[coinId] = DateTime.Now;

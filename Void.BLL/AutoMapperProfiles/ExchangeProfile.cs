@@ -9,6 +9,7 @@ namespace Void.BLL.AutoMapperProfiles
         public ExchangeProfile()
         {
             CreateMap<CoinGeckoExchangeReadDto, Exchange>();
+            CreateMap<Exchange, ExchangeNotificationReadDto>();
         }
     }
 }

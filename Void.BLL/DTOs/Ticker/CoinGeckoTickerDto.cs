@@ -37,7 +37,7 @@ namespace Void.BLL.DTOs.Ticker
         public string TrustScore { get; set; }
 
         [JsonProperty("bid_ask_spread_percentage")]
-        public double BidAskSpreadPercentage { get; set; }
+        public double? BidAskSpreadPercentage { get; set; }
 
         [JsonProperty("timestamp")]
         public DateTime Timestamp { get; set; }
